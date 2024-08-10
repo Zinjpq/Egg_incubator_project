@@ -1,0 +1,6 @@
+Project: Mạch cảm biến nhiệt, ứng dụng lò ấp trứng
+Trong thư mục mẹ, có 3 thư mục con như sau:
+- Code: Code chương trình. Mở project bằng phần mềm CodeVisionAVR 3.12
+- Mo phong: Phần mô phỏng chương trình, chạy thử
+- Schematic: Sơ đồ nguyên lý + Mạch in + 3D Viewer. Mở bằng phần mềm Proteus 8.6
+

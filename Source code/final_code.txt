@@ -1,0 +1,143 @@
+#include <DHT.h>
+#include <util/delay.h>
+#include <avr/io.h>
+#include <avr/interrupt.h> //thu vien interrupt 
+#include "my_lib.h"
+
+//phan cai dat cac chan
+#define LCD_RS PC0
+#define LCD_E PC1
+#define LCD_D4 PC2
+#define LCD_D5 PC3
+#define LCD_D6 PC4
+#define LCD_D7 PC5
+
+#define BUTTON_T_UP PD2
+#define BUTTON_T_DOWN PD3
+
+#define DHTPIN A0 // Chân data DHT11 kết nối với D2
+#define DHTTYPE DHT11 // Loại cảm biến DHT11
+
+#define FAN PB2
+#define LAMP PB3
+
+DHT dht(DHTPIN, DHTTYPE); // Khởi tạo đối tượng DHT
+
+//Khởi tạo nhiệt độ đặt thoi gian 
+int temp_set = 35;
+char ss;
+int current_time;
+int prev_time;
+
+//cau hinh button 
+ISR(INT0_vect)
+{
+	temp_set++;
+	_delay_ms(20);
+  //chong rung phim
+	while ((PIND & 0x04)==0)
+	{}
+	_delay_ms(20);
+  //xoa co ngat
+  GIFR |= (1 << INTF0); 
+}
+ISR(INT1_vect)
+{
+	temp_set--;
+  //chong rung phim
+	_delay_ms(20);
+	while ((PIND & 0x08)==0)
+	{}
+	_delay_ms(20);
+  //xoa co ngat
+	GIFR |= (1 << INTF1); 
+}
+
+//Mot so ham thuc thi khac
+void fan_control(float temp);
+void led_control(float temp);
+
+void setup() {
+  // Define I/O pin directions//
+  DDRB |= (1 << LAMP)| (1 << FAN); //Định nghĩa là output
+  DDRC &= ~(1 << PC0) & ~(1 << PC1) & ~(1 << PC2); //Định nghĩa là input
+  DDRD |= (1 << LCD_RS) | (1 << LCD_E) | (1 << LCD_D4) | (1 << LCD_D5) | (1 << LCD_D6) | (1 << LCD_D7);
+  PORTC |= (1 << PC0)| (1 << PC1); // Kích hoạt trogn nội điều khiển kéo lên cho PC0
+  dht.begin(); // Bắt đầu sử dụng cảm biến DHT11
+  // Initialize ADC//
+  adc_init();
+  //Set 4bit mode//
+  lcd_command(0x02);
+  //pwm set up//
+  /*Fast PWM, On-Inverting, 1:1 PreScaler*/
+	TCCR0=(1<<WGM01)|(1<<WGM00)|(1<<COM01)|(1<<CS00);
+	/*Duty Cycle*/
+	OCR0=125; //default do sang=50%
+  // Initialize LCD//
+  lcd_command(0x28);  /* Initialization of 16X2 LCD in 4bit mode */
+  lcd_command(0x0C);  // Display on, cursor off, blink off
+  lcd_command(0x80);  // Set cursor to home position
+  lcd_clear();        // Clear display
+  //setup interupt button//
+  //enable global interrupt
+	sei();
+	//set using external interrupt
+	GICR|=(1<<INT0)|(1<<INT1);
+	//set mode of interupt
+	MCUCR=(1<<ISC00)|(1<<ISC01)|(1<<ISC10)|(1<<ISC11);
+  //set prevtime//
+  prevtime=millis();
+  //say hi//
+  hello();
+}
+
+void loop() {
+  // Đọc dữ liệu nhiệt độ và độ ẩm
+  float humidity = dht.readHumidity(); // Get humidity using readHumidity()
+  float temp = dht.readTemperature(); // Get temperature using readTemperature()
+  // Kiểm tra lỗi đọc dữ liệu
+  if (isnan(humidity) || isnan(temp)) {
+    lcd_string("Loi doc du lieu!");
+    return;
+  }
+  //ham thuc hien chuc nang
+  write_temp(temp,temp_set);
+  fan_control(temp);
+  led_control(temp);
+  _delay_ms(20); // Chờ 
+}
+
+void fan_control(float temp) {
+    if (temp >= temp_set) {
+        PORTB |= (1 << FAN); // Turn fan on
+    } else {
+        PORTB &= ~(1 << FAN); // Turn fan off
+    }
+}
+
+void led_control(float temp)
+{
+  current_time=millis();
+  if (current_time - prev_time > 100) {
+    int pwm=OCR0;
+    // dieu chinh xung theo nhiet do 
+    if (temp > temp_set) {
+      pwm -= 5;
+    } else if (temp < temp_set) {
+      pwm += 5;
+    }
+    prev_time=current_time;
+    // reset 
+    if (pwm < 0) {
+      pwm = 0;
+    } else if (pwm > 255) {
+      pwm = 255;
+    }
+    //gan lai cho OCR0 de dieu chinh xung
+    OCR0=pwm;
+    delay(50);
+  }
+}
+
+  
+
