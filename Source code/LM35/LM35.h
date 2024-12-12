@@ -1,24 +1,24 @@
 // Đọc dữ liệu từ Lm35
 uint16_t adc_read(uint8_t adc_port) {
-	ADMUX = (1<<REFS0) | adc_port; // Set ADC port
-	ADCSRA |= (1 << ADSC); // Start conversion
+	ADMUX = (1<<REFS0) | adc_port; // Chọn cổng ADC
+	ADCSRA |= (1 << ADSC); // Bắt đầu chuyển đổi
 	while (ADCSRA & (1 << ADSC)) {
-		// Wait for conversion to finish
+		// Chờ chuyển đổi hoàn thành
 	}
-	return ADCW; // Return the converted value
+	return ADCW; // Trả về giá trị đã chuyển đổi
 }
 
 void adc_init(){
-	ADMUX = (1 << REFS0); // Select AVCC as the reference source
+	ADMUX = (1 << REFS0); // Chọn AVCC làm nguồn tham chiếu
 	ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
-	// Turn on ADC and select prescaler 1/128 (ADPS2:0 = 111)
+	// Bật ADC và chọn bộ chia tần số 1/128 (ADPS2:0 = 111)
 
-	//ADCSRB = 0; // Set all bits in ADCSRB to 0 to not use any functions
+	//ADCSRB = 0; // Đặt tất cả các bit trong ADCSRB về 0 để không sử dụng bất kỳ chức năng nào
 
-	// Wait for the ADC to stabilize
+	// Chờ ADC ổn định
 	_delay_ms(2);
 }
-// Cách dùng"
+// Cách dùng
 
 int main(void){
 	adc_init();
@@ -36,7 +36,7 @@ int main(void){
 Bit 5-ADLAR (ADC Left Adjust Result): là bit cho phép hiệu chỉnh trái kết quả chuyển đổi. 
 Sở dĩ có bit này là vì ADC trên AVR có độ phân giải 10 bit, nghĩa là kết quả thu được sau 
 chuyển đổi là 1 số có độ dài 10 bit (tối đa 1023), AVR bố trí 2 thanh ghi data 8 bit để 
-chứa giá trị sau chuyển đổi. Như thế giá trị chuyển đổi sẽ không lắp đầy 2 thanh ghi  data, 
+chứa giá trị sau chuyển đổi. Như thế giá trị chuyển đổi sẽ không lắp đầy 2 thanh ghi data, 
 trong một số trường hợp người dùng muốn 10 bit kết quả nằm lệch về phía trái trong khi 
 cũng có trường hợp người dùng muốn kết quả nằm về phía phải. Bit ADLAR sẽ quyết định vị 
 trí của 10 bit kết quả trong 16 bit của 2 thanh ghi data. Nếu ADLAR=0 kết quả sẽ được hiệu 
