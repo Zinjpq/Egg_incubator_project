@@ -1,0 +1,29 @@
+*.workspace
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Build outputs
+build/
+dist/
+*.o
+*.a
+*.so
+
+# Dependencies
+node_modules/
+venv/
+__pycache__/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment variables
+.env
+.env.local
